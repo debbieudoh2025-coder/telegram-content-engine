@@ -1,0 +1,488 @@
+{
+  "name": "Telegram Content Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -1120,
+        -416
+      ],
+      "id": "024ffc87-16a2-40de-a2e5-dc599f9d8536",
+      "name": "Telegram Trigger"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -448,
+        -512
+      ],
+      "id": "b61d1076-e35b-4b5b-901b-46da815bcdf7",
+      "name": "Get a file"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.8-flash",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.8 Flash"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -224,
+        -512
+      ],
+      "id": "2a872b6f-d148-472a-b040-8c85c2371b0d",
+      "name": "Transcribe a recording"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eeccf800-8553-480b-b2d4-2f41fd8ae70d",
+              "name": "Message",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        64,
+        -512
+      ],
+      "id": "d0d6a83b-b898-4b7f-bb53-040fffc59189",
+      "name": "Idea From Voice"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "59b959cb-d890-4761-af63-c7a67908ca79",
+              "name": "Message",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -448,
+        -320
+      ],
+      "id": "31761fbe-d678-44f6-9e0b-e6ebdb5f6c2f",
+      "name": "Idea From Text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a content writer for an AI automation specialist.\nWrite LinkedIn content using ONLY the idea below.\n\nIdea: {{ $json.Message }}\n\nStrict rules:\n- Use only facts, tools, and events that appear in the idea.\n- Do not add stories, numbers, results, tools, or time claims that are not in the idea.\n- Do not explain why I did something unless the idea says why.\n- Do not add feelings, motives, alternatives I considered, or places I was.\n- Do not claim anything about cost, speed, security, or results unless the idea says it.\n- If a detail is missing, leave it out.\n- If the idea is empty, return {\"error\": \"Idea is empty\"}.\n\nStyle rules:\n- Use simple English. Short sentences.\n- Start each post with a strong one-line hook.\n- Write from my point of view (\"I built...\", \"I learned...\").\n- Each post must be under 1200 characters.\n- Use 3 hashtags at most.\n- Never use double quotes inside the text. Use single quotes instead.\n- Use the real details in the idea: what broke, what I tried, what worked, what I learned.\n- If the idea has only 2 or 3 facts, keep the content short. Do not add filler.\n- Never use words like 'instantly', 'easily', 'quickly', 'exact', or 'secure' unless the idea uses them.\n- End each post and the video script with one short question for the reader. The question must not add new facts.\n\nReturn ONLY valid JSON, with no extra text:\n{\n  \"linkedin_post_1\": \"...\",\n  \"linkedin_post_2\": \"...\",\n  \"video_script\": \"...\"\n}\n\nPost 1 tells a story.\nPost 2 gives steps or tips.\nThe video script is for a 60 second video. Use up to 150 words, but only if the idea has enough facts. A shorter script is fine.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        432,
+        -320
+      ],
+      "id": "64134330-148a-471b-9012-2a71ac44e20b",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.8-flash",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        -32
+      ],
+      "id": "f3c5042e-5bdf-4f2e-9b2f-b944816f78f0",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a4cec286-eb2c-4c31-b013-ed7a63a7dfc7",
+              "leftValue": "={{ $json.message.chat.id }}",
+              "rightValue": "YOUR_CHAT_ID",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -896,
+        -416
+      ],
+      "id": "f14fcfea-2f11-4700-a04d-05a930f20a8a",
+      "name": "My Chat Only"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0a569985-35f6-4ed0-b4f8-2609f59bf7be",
+              "leftValue": "={{ $json.message.voice.file_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -672,
+        -432
+      ],
+      "id": "27d27ee9-7fc6-4c20-9122-e1e892266c74",
+      "name": "Voice Or Text?"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -320
+      ],
+      "id": "f46c21ca-3a95-4f62-af32-c7bc75109f2f",
+      "name": "Join Idea"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nlet text = item.output ?? item.response_ai_agent ?? item.content?.parts?.[0]?.text ?? item.text ?? '';\ntext = text.replace(/```json|```/g, '').trim();\n\nconst start = text.indexOf('{');\nconst end = text.lastIndexOf('}');\nif (start === -1 || end === -1) {\n  throw new Error('No JSON found. Gemini replied: ' + text.slice(0, 300));\n}\nconst raw = text.slice(start, end + 1);\n\n// turn real line breaks inside quoted text into \\n so the JSON is valid\nlet fixed = '';\nlet inString = false;\nlet escaped = false;\nfor (const ch of raw) {\n  if (inString) {\n    if (escaped) { fixed += ch; escaped = false; continue; }\n    if (ch === '\\\\') { fixed += ch; escaped = true; continue; }\n    if (ch === '\"') { fixed += ch; inString = false; continue; }\n    if (ch === '\\n') { fixed += '\\\\n'; continue; }\n    if (ch === '\\r') { continue; }\n    if (ch === '\\t') { fixed += '\\\\t'; continue; }\n    fixed += ch;\n  } else {\n    if (ch === '\"') inString = true;\n    fixed += ch;\n  }\n}\n\ntry {\n  return [{ json: JSON.parse(fixed) }];\n} catch (e) {\n  throw new Error('JSON is broken: ' + e.message + ' | Text: ' + fixed.slice(0, 300));\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        -320
+      ],
+      "id": "2a532ba3-7173-4c81-aa29-6ecffe38dedd",
+      "name": "Clean AI Reply"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Content Engine"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "LINKEDIN POST 1": "={{ $json.linkedin_post_1 }}",
+            "VIDEO SCRIPT ": "={{ $json.video_script }}",
+            "LINKEDIN POST 2": "={{ $json.linkedin_post_2 }}",
+            "STATUS": "=Draft",
+            "DATE": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "IDEA": "={{ $('Join Idea').item.json.Message }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "DATE",
+              "displayName": "DATE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "IDEA",
+              "displayName": "IDEA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LINKEDIN POST 1",
+              "displayName": "LINKEDIN POST 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LINKEDIN POST 2",
+              "displayName": "LINKEDIN POST 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "VIDEO SCRIPT ",
+              "displayName": "VIDEO SCRIPT ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        -544
+      ],
+      "id": "d92ab986-85bd-472d-8636-d15490e3ca6c",
+      "name": "Send Draft To Sheet"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_CHAT_ID",
+        "text": "=POST 1\n{{ $('Clean AI Reply').item.json.linkedin_post_1 }}\n\nPOST 2\n{{ $('Clean AI Reply').item.json.linkedin_post_2 }}\n\nVIDEO SCRIPT\n{{ $('Clean AI Reply').item.json.video_script }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1216,
+        -544
+      ],
+      "id": "bc6fcc84-971a-43eb-a165-77feb51f2c8c",
+      "name": "Send Drafts To Telegram"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "My Chat Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Idea From Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Idea From Text": {
+      "main": [
+        [
+          {
+            "node": "Join Idea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Idea From Voice": {
+      "main": [
+        [
+          {
+            "node": "Join Idea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Clean AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "My Chat Only": {
+      "main": [
+        [
+          {
+            "node": "Voice Or Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice Or Text?": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Idea From Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Join Idea": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean AI Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Draft To Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Draft To Sheet": {
+      "main": [
+        [
+          {
+            "node": "Send Drafts To Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
